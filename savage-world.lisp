@@ -106,7 +106,10 @@
 
 (defun savage-do-upgrades (character)
   "This does really update the skills of the character according to the updates"
-  (labels ((skill (upgrade) (assoc (first upgrade) (character-skills character) :test #'equal))
+  (labels ((myequal (x y) ;; This helper does only a prefix compare
+              (let ((min (min (length x) (length y))))
+                (equal (subseq x 0 min) (subseq y 0 min))))
+           (skill (upgrade) (assoc (first upgrade) (character-skills character) :test #'myequal))
            (do-upgrade (upgrade)
              "Does an upgrade in the form of '(\"attribute\" level), where level is a number"
              (if (and (> (length upgrade) 1) (> (second upgrade) 0))
