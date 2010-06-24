@@ -12,6 +12,8 @@
    (setting :initarg :setting :accessor character-setting)
    (concept :initarg :concept :accessor character-concept)
    (sex     :initarg :sex :accessor character-sex)
+   (handicaps :initarg :handicaps :accessor character-handicaps)
+   (talents  :initarg :talents :accessor character-talents)
    (weight  :initarg :weight :accessor character-weight)))
 
 (defclass character-sheet-savage-world (character-sheet)
@@ -19,8 +21,8 @@
    (skills     :initarg :skills     :accessor character-skills)
    (upgrades   :initarg :upgrades   :accessor character-upgrades)))
 
-(defparameter *default-font* (pdf:get-font "Helvetica"))
-(defparameter *point-stroke-color* '(0 0 0))
+(defparameter *default-font* (pdf:get-font "Courier"))
+(defparameter *point-stroke-color* '(0   0   0))
 (defparameter *point-fill-color*   '(0.2 0.3 0.4))
 (defparameter *text-color*         '(0.0 0.0 0.0))
 
@@ -49,7 +51,26 @@
     (pdf:move-to x y)
     (pdf:draw-text text)))
 
-        
+(defun put-list (base-x base-y first-offset delta-y line-width elements)
+  (flet ((size (x) (text-width x *default-font* 8.0)))
+  (let* ((line 0) (offset-x first-offset)
+         ;; Sort the list the way, that the shortest text (text-width) is at the first place
+         (elements (sort (copy-list elements) #'(lambda (a b) (< (size a) (size b)))))
+         (elements  (mapcon #'(lambda (x)
+                                (if (> (length x) 1)
+                                    (list (format nil "~a, " (first x)))
+                                    x)) 
+                            elements)))
+    
+    (dolist (elem elements)
+      ;; Go to next line, if text would'nt fit
+      (when (< line-width (+ offset-x (size elem)))
+          (incf line)
+          (setf offset-x 0))
+      (put-text (+ base-x offset-x) (+ base-y (* delta-y line)) elem)
+      (incf offset-x (size elem))))))
+
+
 (defun testit ()
   (let ((character (make-instance 
                     'character-sheet-savage-world 
@@ -71,7 +92,9 @@
                     :skills '(("Schießen" 4)
                               ("Reiten"   1))
                     :upgrades '(nil 
-                                ("scdsc" 0) 
+                                ("scdsc") 
                                 ("Schwimmen" 4)
-                                (("Reiten" 3) ("Fliegen" 2))))))
+                                (("Reiten" 3) ("Fliegen" 2)))
+                    :handicaps '("Ehrencodex (Mando)" "Loyal" "Gier")
+                    :talents   '("Beidhändig" "Kräftig"))))
     (draw-character-sheet character #P"/home/stettberger/u/rpg/savageworld.pdf" #P"/tmp/test.pdf")))
